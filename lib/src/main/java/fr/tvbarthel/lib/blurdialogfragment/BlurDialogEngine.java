@@ -20,6 +20,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.support.v8.renderscript.RenderScript;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -134,6 +135,10 @@ public class BlurDialogEngine {
      */
     private boolean mUseRenderScript;
 
+    /**
+     * Set already create RenderScript
+     */
+    private RenderScript mRenderScript;
 
     /**
      * Constructor.
@@ -269,6 +274,10 @@ public class BlurDialogEngine {
         mUseRenderScript = useRenderScript;
     }
 
+    public void setRenderScript(RenderScript renderScript) {
+        mRenderScript = renderScript;
+    }
+
     /**
      * Enable / disable blurred action bar.
      * <p/>
@@ -387,7 +396,9 @@ public class BlurDialogEngine {
 
         //apply fast blur on overlay
         if (mUseRenderScript) {
-            overlay = RenderScriptBlurHelper.doBlur(overlay, mBlurRadius, true, mHoldingActivity);
+            overlay = mRenderScript == null ?
+                    RenderScriptBlurHelper.doBlur(overlay, mBlurRadius, true, mHoldingActivity) :
+                    RenderScriptBlurHelper.doBlur(mRenderScript, overlay, mBlurRadius, true);
         } else {
             overlay = FastBlurHelper.doBlur(overlay, mBlurRadius, true);
         }
@@ -561,13 +572,7 @@ public class BlurDialogEngine {
             //process to the blue
             if (!isCancelled()) {
                 blur(mBackground, mBackgroundView);
-            } else {
-                return null;
             }
-            //clear memory
-            mBackground.recycle();
-            mBackgroundView.destroyDrawingCache();
-            mBackgroundView.setDrawingCacheEnabled(false);
             return null;
         }
 
@@ -575,6 +580,10 @@ public class BlurDialogEngine {
         @SuppressLint("NewApi")
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
+            //clear memory
+            mBackground.recycle();
+            mBackgroundView.destroyDrawingCache();
+            mBackgroundView.setDrawingCacheEnabled(false);
 
             mHoldingActivity.getWindow().addContentView(
                 mBlurredBackgroundView,

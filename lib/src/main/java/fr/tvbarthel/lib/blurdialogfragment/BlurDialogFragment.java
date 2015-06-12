@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.support.v8.renderscript.RenderScript;
 import android.view.WindowManager;
 
 /**
@@ -53,6 +54,8 @@ public abstract class BlurDialogFragment extends DialogFragment {
             throw new IllegalArgumentException("Down scale must be strictly greater than 1.0. Found : " + factor);
         }
         mBlurEngine.setDownScaleFactor(factor);
+
+        mBlurEngine.setRenderScript(getRenderScript());
 
         mBlurEngine.setUseRenderScript(isRenderScriptEnable());
 
@@ -210,5 +213,15 @@ public abstract class BlurDialogFragment extends DialogFragment {
      */
     protected boolean isRenderScriptEnable() {
         return BlurDialogEngine.DEFAULT_USE_RENDERSCRIPT;
+    }
+
+    /**
+     * Can add already created RenderScript for faster blur
+     * Default return null
+     *
+     * @return created RenderScript.
+     */
+    protected RenderScript getRenderScript() {
+        return null;
     }
 }

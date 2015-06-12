@@ -70,6 +70,50 @@ final class RenderScriptBlurHelper {
         return null;
     }
 
+    /**
+     * blur a given bitmap
+     *
+     * @param rs               RenderScript for blur
+     * @param sentBitmap       bitmap to blur
+     * @param radius           blur radius
+     * @param canReuseInBitmap true if bitmap must be reused without blur
+     * @return blurred bitmap
+     */
+    public static Bitmap doBlur(RenderScript rs, Bitmap sentBitmap, int radius, boolean canReuseInBitmap) {
+        Bitmap bitmap;
+
+        if (canReuseInBitmap) {
+            bitmap = sentBitmap;
+        } else {
+            bitmap = sentBitmap.copy(sentBitmap.getConfig(), true);
+        }
+
+        if (bitmap.getConfig() == Bitmap.Config.RGB_565) {
+            // RenderScript hates RGB_565 so we convert it to ARGB_8888
+            // (see http://stackoverflow.com/questions/21563299/
+            // defect-of-image-with-scriptintrinsicblur-from-support-library)
+            bitmap = convertRGB565toARGB888(bitmap);
+        }
+
+        try {
+            final ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
+            final Allocation input = Allocation.createFromBitmap(rs, bitmap, Allocation.MipmapControl.MIPMAP_NONE,
+                    Allocation.USAGE_SCRIPT);
+            final Allocation output = Allocation.createTyped(rs, input.getType());
+            script.setRadius(radius);
+
+            input.copyFrom(bitmap);
+            script.setInput(input);
+            script.forEach(output);
+            output.copyTo(bitmap);
+            return bitmap;
+        } catch (RSRuntimeException e) {
+            Log.e(TAG, "RenderScript known error : https://code.google.com/p/android/issues/detail?id=71347 "
+                    + "continue with the FastBlur approach.");
+        }
+        return null;
+    }
+
     private static Bitmap convertRGB565toARGB888(Bitmap bitmap) {
         return bitmap.copy(Bitmap.Config.ARGB_8888, true);
     }
