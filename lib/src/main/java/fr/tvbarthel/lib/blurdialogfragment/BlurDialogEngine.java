@@ -228,11 +228,7 @@ public class BlurDialogEngine {
      * @param factor customized down scale factor, must be at least 1.0 ( no down scale applied )
      */
     public void setDownScaleFactor(float factor) {
-        if (factor >= 1.0f) {
-            mDownScaleFactor = factor;
-        } else {
-            mDownScaleFactor = 1.0f;
-        }
+        mDownScaleFactor = factor >= 1.0f ? factor : 1.0f;
     }
 
     /**
@@ -244,11 +240,7 @@ public class BlurDialogEngine {
      * @param radius custom radius used to blur.
      */
     public void setBlurRadius(int radius) {
-        if (radius >= 0) {
-            mBlurRadius = radius;
-        } else {
-            mBlurRadius = 0;
-        }
+        mBlurRadius = radius >= 0 ? radius : 0;
     }
 
     /**
@@ -269,11 +261,18 @@ public class BlurDialogEngine {
      *
      * @param useRenderScript use of RenderScript
      */
-
     public void setUseRenderScript(boolean useRenderScript) {
         mUseRenderScript = useRenderScript;
     }
 
+    /**
+     * Apply created RenderScript.
+     * <p/>
+     * By default it is null
+     * For better performance you can create RenderScript instance on Splash screen and use it in app
+     *
+     * @param renderScript already created RenderScript instance.
+     */
     public void setRenderScript(RenderScript renderScript) {
         mRenderScript = renderScript;
     }
@@ -343,7 +342,6 @@ public class BlurDialogEngine {
         int bottomOffset = 0;
         int rightOffset = 0;
         final int navBarSize = getNavigationBarOffset();
-
         if (mHoldingActivity.getResources().getBoolean(R.bool.blur_dialog_has_bottom_navigation_bar)) {
             bottomOffset = navBarSize;
         } else {
@@ -365,11 +363,9 @@ public class BlurDialogEngine {
             / (view.getHeight() - topOffset - bottomOffset)));
 
         // Render script doesn't work with RGB_565
-        if (mUseRenderScript) {
-            overlay = Bitmap.createBitmap((int) width, (int) height, Bitmap.Config.ARGB_8888);
-        } else {
-            overlay = Bitmap.createBitmap((int) width, (int) height, Bitmap.Config.RGB_565);
-        }
+        overlay = mUseRenderScript
+                ? Bitmap.createBitmap((int) width, (int) height, Bitmap.Config.ARGB_8888)
+                : Bitmap.createBitmap((int) width, (int) height, Bitmap.Config.RGB_565);
         try {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB
                 || mHoldingActivity instanceof ActionBarActivity
@@ -396,9 +392,9 @@ public class BlurDialogEngine {
 
         //apply fast blur on overlay
         if (mUseRenderScript) {
-            overlay = mRenderScript == null ?
-                    RenderScriptBlurHelper.doBlur(overlay, mBlurRadius, true, mHoldingActivity) :
-                    RenderScriptBlurHelper.doBlur(mRenderScript, overlay, mBlurRadius, true);
+            overlay = mRenderScript == null
+                    ? RenderScriptBlurHelper.doBlur(overlay, mBlurRadius, true, mHoldingActivity)
+                    : RenderScriptBlurHelper.doBlur(mRenderScript, overlay, mBlurRadius, true);
         } else {
             overlay = FastBlurHelper.doBlur(overlay, mBlurRadius, true);
         }
@@ -432,7 +428,6 @@ public class BlurDialogEngine {
      */
     private int getActionBarHeight() {
         int actionBarHeight = 0;
-
         try {
             if (mToolbar != null) {
                 actionBarHeight = mToolbar.getHeight();
@@ -536,7 +531,6 @@ public class BlurDialogEngine {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-
             mBackgroundView = mHoldingActivity.getWindow().getDecorView();
 
             //retrieve background view, must be achieved on ui thread since
